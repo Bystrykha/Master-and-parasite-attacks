@@ -1,49 +1,66 @@
-#!/usr/bin/env python3
-from bs4 import BeautifulSoup
-from requests import get
-from time import sleep
-from wget import download
+package main
 
+import (
+	"fmt"
+	_ "github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"io/ioutil"
+	"net/http"
+)
 
-def get_image_url(link):
-    while True:
-        resp2 = get(link)
-        resp_text2 = resp2.text
-        soup2 = BeautifulSoup(resp_text2, features="lxml")
-        showcase2 = str(soup2.find_all('a', class_="JS-Popup"))
-        fields = showcase2.split("\"")
-        if len(fields) < 3:
-            sleep(2)
-            continue
-        else:
-            return fields[3]
+func main() {
+	handler1 := http.HandlerFunc(sendJPG1G)
+	handler2 := http.HandlerFunc(sendJPG500M)
+	handler3 := http.HandlerFunc(injection)
 
+	http.Handle("/image", handler1)
+	http.Handle("/image2", handler2)
+	http.Handle("/page", handler3)
+	//http.ListenAndServe(":4000", nil)
+	ip := &layers.IPv4{}
+	for k := range ip{
+		fmt.Println(k)
+	}
 
-def images_download():
-    f = open("links.txt", "r")
-    counter = 0
-    while True:
-        link = f.readline()
-        if not link:
-            break
-        else:
-            sleep(6)
-            download(link, f"C:/Users/Asus/go/ImageServer/images/image{counter}")
-            counter += 1
-    return counter
+}
 
+func sendJPG1G(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	way := "images min/image (" + id + ")"
+	fmt.Println(way)
+	fileBytes, err := ioutil.ReadFile(way)
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Cache-Control", "public, max-age=31536000")
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(fileBytes)
+	return
+}
 
-if __name__ == "__main__":
-    links = []
-    dom = "https://wallpaperscraft.ru"
-    page = "/all/3415x3415/page"
-    for i in range(2, 600):
-        resp = get(dom + page + str(i))
-        resp_text = resp.text
-        soup = BeautifulSoup(resp_text, features="lxml")
-        showcase = soup.find_all('a', class_="wallpapers__link")
-        for j in showcase:
-            a = str(j)
-            url2 = dom + (a.split("\"")[3])
-            a = get_image_url(url2)
-    print(images_download())
+func sendJPG500M(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	way := "images min 2/image (" + id + ")"
+	fmt.Println(way)
+	fileBytes, err := ioutil.ReadFile(way)
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Cache-Control", "public, max-age=31536000")
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(fileBytes)
+	return
+}
+
+func injection(w http.ResponseWriter, r *http.Request) {
+	fileBytes, err := ioutil.ReadFile("cachePacket.html")
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.Write(fileBytes)
+	return
+}
